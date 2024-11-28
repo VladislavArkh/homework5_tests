@@ -1,0 +1,32 @@
+import hashlib
+import json
+import datetime 
+
+
+def get_score(store, phone, email, birthday=None, gender=None, first_name=None, last_name=None):
+    key_parts = [
+        first_name or "",
+        last_name or "",
+        phone or "",
+        birthday or "",
+    ]
+    key = "uid:" + hashlib.md5("".join(key_parts).encode('utf-8')).hexdigest()
+    score = store.cache_get(key) or 0
+    if score:
+        return score
+    if phone:
+        score += 1.5
+    if email:
+        score += 1.5
+    if birthday and gender:
+        score += 1.5
+    if first_name and last_name:
+        score += 0.5
+    if store.connect_to_redis():
+        store.cache_set(key, score, 60 * 60)
+    return score
+
+
+def get_interests(store, cid):
+    r = store.get("i:%s" % cid)
+    return r if r else []
